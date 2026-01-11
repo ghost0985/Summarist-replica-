@@ -1,0 +1,140 @@
+/* === Selected Book Container === */
+.selectedBookContainer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  background-color: #fbefd6;
+  border-radius: 8px;
+  padding: 20px 28px;
+  margin-bottom: 24px;
+  width: 60%;
+  gap: 28px;
+  box-sizing: border-box;
+}
+
+/* === Left Section: Subtitle Text === */
+.selectedBookSubtitle {
+  font-size: 18px;
+  color: #1f2937;
+  line-height: 1.5;
+  width: 40%;
+}
+
+/* === Divider === */
+.selectedBookDivider {
+  width: 1px;
+  height: 150px;
+  background-color: rgba(0, 0, 0, 0.24);
+  flex-shrink: 0;
+}
+
+/* === Right Section: Image + Info === */
+.selectedBookRight {
+  display: flex;
+  gap: 24px;
+}
+
+.selectedBookImage {
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.selectedBookInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* === Book Title and Author === */
+.selectedBookInfo h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.selectedBookInfo p {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 4px;
+}
+
+/* === Play Button Section === */
+.selectedBookPlay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.selectedBookPlay button {
+  background-color: #111;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.selectedBookPlay button:hover {
+  background-color: #000000cc;
+}
+
+.selectedBookPlay span {
+  font-size: 14px;
+  color: #111;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 1120px) {
+  .selectedBookContainer {
+    width: 100%;
+  }
+}
+
+@media (max-width: 770px) {
+  .selectedBookContainer {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .selectedBookSubtitle {
+    width: 100%;
+  }
+
+  .selectedBookDivider {
+    display: none;
+  }
+
+  .selectedBookRight {
+    gap: 16px;
+  }
+
+  .selectedBookInfo {
+    margin-bottom: 50px;
+  }
+
+  .selectedBookPlay {
+    padding-top: 10px;
+  }
+
+  .selectedBookPlay button {
+    width: 45px;
+    height: 45px;
+  }
+
+  .selectedBookPlay span {
+    font-size: 18px;
+  }
+}

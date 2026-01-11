@@ -1,15 +1,12 @@
-@import "tailwindcss";
+/* === Tailwind Directives === */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* === Root Theme Variables === */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +16,94 @@
   }
 }
 
+/* === Mobile Styles (≤ 770px) === */
+@media (max-width: 770px) {
+  body.search-open {
+    position: fixed;
+    width: 100%;
+  }
+
+  section.hero h1 {
+    font-size: 1.7rem;
+    line-height: 2.1rem;
+    margin-bottom: 1rem;
+  }
+
+  section.hero p {
+    font-size: 0.95rem;
+  }
+
+  section.hero img {
+    max-width: 220px;
+    height: auto;
+  }
+}
+
+/* === Animations === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* === FAQ Answer Animation === */
+.faq-answer {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(10px);
+  transition:
+    max-height 0.4s ease,
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.faq-answer.open {
+  max-height: 500px; 
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === Global Layout & Behavior === */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  overscroll-behavior: none;
+}
+
+#__next,
+:root {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* === Default Body Theme === */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  @apply bg-white text-black dark:bg-gray-900 dark:text-white;
+}
+
+/* === Scrollbar Utility === */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
