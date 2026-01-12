@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-11-17.clover",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 
 if (!admin.apps.length) {
   admin.initializeApp({
