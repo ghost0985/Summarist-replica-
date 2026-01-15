@@ -27,6 +27,7 @@ export default function LoginModal({
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -42,6 +43,7 @@ export default function LoginModal({
     }
   };
 
+  // === Google Login ===
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
@@ -52,12 +54,13 @@ export default function LoginModal({
     }
   };
 
+  // === Email Login ===
   const handleEmailLogin = async () => {
     setError(null);
     try {
       await signInWithEmail(email, password);
       onClose();
-      maybeRedirect
+      maybeRedirect();
     } catch (err: any) {
       switch (err.code) {
         case "auth/invalid-email":
@@ -75,12 +78,13 @@ export default function LoginModal({
     }
   };
 
+  // === Registration ===
   const handleRegister = async () => {
     setError(null);
     try {
       await signUpWithEmail(email, password);
       onClose();
-      maybeRedirect
+      maybeRedirect();
     } catch (err: any) {
       switch (err.code) {
         case "auth/invalid-email":
@@ -98,6 +102,7 @@ export default function LoginModal({
     }
   };
 
+  // === Forgot Password ===
   const handleForgotPassword = async () => {
     if (!email) {
       setError("Enter your email first.");
@@ -124,14 +129,19 @@ export default function LoginModal({
     }
   };
 
+  // === Guest Login ===
   const handleGuestLogin = async () => {
     try {
+      setIsGuestLoading(true);
       const user = await signInGuest();
       console.log("Guest user logged in as premium:", user);
       onClose();
-      maybeRedirect
-    } catch {
+      maybeRedirect();
+    } catch (err) {
+      console.error("Guest login error:", err);
       setError("Guest login failed. Try again.");
+    } finally {
+      setIsGuestLoading(false);
     }
   };
 
@@ -152,7 +162,7 @@ export default function LoginModal({
           {isRegister ? "Sign up to Summarist" : "Log in to Summarist"}
         </h2>
 
-        {/* === Conditional Auth Form === */}
+        {/* === Auth Modes === */}
         {isRegister ? (
           <>
             {/* --- Sign Up View --- */}
@@ -215,10 +225,15 @@ export default function LoginModal({
             {/* --- Login View --- */}
             <button
               onClick={handleGuestLogin}
-              className="w-full py-3 mb-3 flex items-center justify-center bg-blue-900/90 text-white rounded-lg hover:bg-blue-900"
+              disabled={isGuestLoading}
+              className={`w-full py-3 mb-3 flex items-center justify-center rounded-lg text-white transition ${
+                isGuestLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-900/90 hover:bg-blue-900"
+              }`}
             >
               <UserRound className="absolute left-8 w-8 h-8" />
-              Login as a Guest
+              {isGuestLoading ? "Logging in..." : "Login as a Guest"}
             </button>
 
             {/* Divider */}

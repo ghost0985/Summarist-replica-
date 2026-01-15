@@ -1,108 +1,86 @@
 "use client";
 
-// === Imports ===
-import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { useAppDispatch } from "@/redux/hooks";
-import { clearUser, setUser } from "@/redux/slices/userSlice";
-import { doc, onSnapshot } from "firebase/firestore";
+import { setUser, clearUser } from "@/redux/slices/userSlice";
+import { doc, onSnapshot, getDoc } from "firebase/firestore";
 
-// === Component: InitUser ===
 export default function InitUser() {
   const dispatch = useAppDispatch();
-  const [authInitializing, setAuthInitializing] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     let unsubscribeUser: (() => void) | null = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (loggingOut) return;
-
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up existing listeners
       if (unsubscribeUser) {
         unsubscribeUser();
         unsubscribeUser = null;
       }
 
-      // === Authenticated User ===
-      if (firebaseUser) {
-        setAuthInitializing(false);
+      // === User logged out ===
+      if (!firebaseUser) {
+        console.log("👋 Logged out, switching to guest mode");
+        dispatch(clearUser());
 
-        // Guest (Anonymous) User Handling
-        if (firebaseUser.isAnonymous) {
-          const guestData =
-            JSON.parse(localStorage.getItem("guestUserData") || "{}") || {};
+        const guestUserData = {
+          uid: "guest",
+          email: "guest@summarist.app",
+          displayName: "Guest",
+          isPremium: true,
+          planType: null,
+          subscriptionStatus: "active",
+          premiumSource: "guest-mode",
+          isGuest: true,
+          savedBooks: ["yQQhtPEnIauz9ci3Dp3q", "6JQOrLfrtNMzuyHwJKQ2"],
+          finishedBooks: ["vhECFu7ctS5e0qx7P2Jx"],
+        };
 
-          const fallbackGuest = {
-            uid: "guest",
-            email: "guest@gmail.com",
-            displayName: "Guest",
-            isPremium: true,
-            planType: null,
-            subscriptionStatus: "active",
-            premiumSource: "guest-mode",
-            isGuest: true,
-            savedBooks: ["yQQhtPEnIauz9ci3Dp3q", "6JQOrLfrtNMzuyHwJKQ2"],
-            finishedBooks: ["vhECFu7ctS5e0qx7P2Jx"],
+        localStorage.setItem("guestUserData", JSON.stringify(guestUserData));
+        dispatch(setUser(guestUserData));
+        return;
+      }
+
+      // === Authenticated user ===
+      try {
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          console.warn("⚠️ No Firestore doc for user yet. Creating fallback guest.");
+          const guestData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email ?? "guest@summarist.app",
+            isPremium: false,
+            isGuest: firebaseUser.isAnonymous ?? false,
+            premiumSource: "none",
           };
-
-          const userData =
-            Object.keys(guestData).length > 0 ? guestData : fallbackGuest;
-
-          localStorage.setItem("guestUserData", JSON.stringify(userData));
-          dispatch(setUser(userData));
+          dispatch(setUser(guestData));
           return;
         }
 
-        // Normal User (Firestore Sync)
-        const userRef = doc(db, "users", firebaseUser.uid);
-        unsubscribeUser = onSnapshot(
-          userRef,
-          (snapshot) => {
-            if (snapshot.exists()) {
-              const data = snapshot.data();
-              dispatch(
-                setUser({
-                  uid: firebaseUser.uid,
-                  email: firebaseUser.email ?? null,
-                  displayName: firebaseUser.displayName ?? "User",
-                  isPremium: data.isPremium ?? false,
-                  planType: data.planType ?? null,
-                  subscriptionStatus: data.subscriptionStatus ?? "inactive",
-                  premiumSource: data.premiumSource ?? "none",
-                  isGuest: firebaseUser.isAnonymous ?? false,
-                })
-              );
-            }
-          },
-          (error) => {
-            if (error.code === "permission-denied") return;
+        // Subscribe to user updates
+        unsubscribeUser = onSnapshot(userRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            dispatch(
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email ?? "guest@summarist.app",
+                displayName: firebaseUser.displayName ?? "User",
+                isPremium: data.isPremium ?? false,
+                planType: data.planType ?? null,
+                subscriptionStatus: data.subscriptionStatus ?? "inactive",
+                premiumSource: data.premiumSource ?? "none",
+                isGuest: firebaseUser.isAnonymous ?? false,
+              })
+            );
           }
-        );
-      }
-
-      // === Logged Out or No User ===
-      else {
-        if (!authInitializing) {
-          const guestUserData = {
-            uid: "guest",
-            email: "guest@gmail.com",
-            displayName: "Guest",
-            isPremium: true,
-            planType: null,
-            subscriptionStatus: "active",
-            premiumSource: "guest-mode",
-            isGuest: true,
-            savedBooks: ["yQQhtPEnIauz9ci3Dp3q", "6JQOrLfrtNMzuyHwJKQ2"],
-            finishedBooks: ["vhECFu7ctS5e0qx7P2Jx"],
-          };
-
-          localStorage.setItem("guestUserData", JSON.stringify(guestUserData));
-          dispatch(setUser(guestUserData));
-        }
-
-        setAuthInitializing(false);
+        });
+      } catch (err) {
+        console.error("🔥 Error initializing user:", err);
       }
     });
 
@@ -110,15 +88,7 @@ export default function InitUser() {
       unsubscribeAuth();
       if (unsubscribeUser) unsubscribeUser();
     };
-  }, [dispatch, authInitializing, loggingOut]);
-
-    async function handleLogout() {
-    setLoggingOut(true);
-    localStorage.removeItem("guestUserData");
-    await signOut(auth);
-    dispatch(clearUser());
-    setTimeout(() => setLoggingOut(false), 400);
-  }
+  }, [dispatch]);
 
   return null;
 }

@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   signOut as firebaseSignOut,
+  signInAnonymously,
   User,
 } from "firebase/auth";
 import {
@@ -23,6 +24,7 @@ import { setUser, clearUser } from "@/redux/slices/userSlice";
 
 export type PremiumSource = "none" | "guest" | "stripe";
 
+// === Firebase Config ===
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -32,13 +34,39 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
+// === Initialize Firebase ===
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
+// === Default starter books ===
 const DEFAULT_BOOKS = ["book-1", "book-2"];
 
+// === Ensure user doc exists in Firestore ===
+async function ensureUserDoc(user: User, overrides?: Partial<{
+  isPremium: boolean;
+  isGuest: boolean;
+  premiumSource: PremiumSource;
+}>) {
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      email: user.email ?? "guest@summarist.app",
+      isPremium: overrides?.isPremium ?? false,
+      isGuest: overrides?.isGuest ?? user.isAnonymous ?? false,
+      premiumSource: overrides?.premiumSource ?? "none",
+      savedBooks: DEFAULT_BOOKS,
+      finishedBooks: [],
+      createdAt: new Date(),
+    });
+    console.log("✅ Created new Firestore doc for user:", user.uid);
+  }
+}
+
+// === Save or update user profile ===
 async function saveUserToFirestore(
   user: User | null,
   overrides?: Partial<{
@@ -50,36 +78,12 @@ async function saveUserToFirestore(
   if (!user) return;
 
   const userRef = doc(db, "users", user.uid);
-  const docSnap = await getDoc(userRef);
+  const userSnap = await getDoc(userRef);
 
-  // --- Guest Account (always premium) ---
-  if (user.email === "guest@gmail.com") {
-    const guestProfile = {
-      email: "guest@gmail.com",
-      isPremium: true,
-      isGuest: true,
-      premiumSource: "guest",
-      savedBooks: DEFAULT_BOOKS,
-      finishedBooks: [],
-      updatedAt: new Date(),
-    };
-
-    await setDoc(userRef, guestProfile);
-    store.dispatch(
-      setUser({
-        uid: user.uid,
-        email: user.email,
-        isPremium: true,
-        isGuest: true,
-        premiumSource: "guest",
-      })
-    );
-    return;
-  }
-
-  // --- Existing User: Merge updates ---
-  if (docSnap.exists()) {
-    const existing = docSnap.data();
+  if (!userSnap.exists()) {
+    await ensureUserDoc(user, overrides);
+  } else {
+    const existing = userSnap.data();
     const updatedFields: Record<string, any> = {};
 
     if (existing.email !== user.email) updatedFields.email = user.email ?? null;
@@ -87,7 +91,8 @@ async function saveUserToFirestore(
       updatedFields.isGuest = user.isAnonymous ?? false;
     if (existing.savedBooks === undefined)
       updatedFields.savedBooks = DEFAULT_BOOKS;
-    if (existing.finishedBooks === undefined) updatedFields.finishedBooks = [];
+    if (existing.finishedBooks === undefined)
+      updatedFields.finishedBooks = [];
 
     updatedFields.isPremium =
       existing.isPremium ?? overrides?.isPremium ?? false;
@@ -95,59 +100,29 @@ async function saveUserToFirestore(
       existing.premiumSource ?? overrides?.premiumSource ?? "none";
 
     await setDoc(userRef, updatedFields, { merge: true });
-
-    store.dispatch(
-      setUser({
-        uid: user.uid,
-        email: user.email ?? null,
-        isPremium: updatedFields.isPremium,
-        isGuest: updatedFields.isGuest ?? false,
-        premiumSource: updatedFields.premiumSource,
-      })
-    );
   }
-  // --- Create fresh profile ---
-  else {
-    const newProfile = {
-      email: user.email ?? null,
+
+  // Always update Redux store
+  store.dispatch(
+    setUser({
+      uid: user.uid,
+      email: user.email ?? "guest@summarist.app",
       isPremium: overrides?.isPremium ?? false,
       isGuest: overrides?.isGuest ?? user.isAnonymous ?? false,
       premiumSource: overrides?.premiumSource ?? "none",
-      savedBooks: DEFAULT_BOOKS,
-      finishedBooks: [],
-    };
-
-    await setDoc(userRef, newProfile);
-
-    store.dispatch(
-      setUser({
-        uid: user.uid,
-        email: user.email ?? null,
-        isPremium: newProfile.isPremium,
-        isGuest: newProfile.isGuest,
-        premiumSource: newProfile.premiumSource,
-      })
-    );
-  }
+    })
+  );
 }
 
 // === Auth Methods ===
 async function signInWithEmail(email: string, password: string) {
-  const result = await firebaseSignInWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
   await saveUserToFirestore(result.user);
   return result.user;
 }
 
 async function signUpWithEmail(email: string, password: string) {
-  const result = await firebaseCreateUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password);
   await saveUserToFirestore(result.user, {
     isPremium: false,
     isGuest: false,
@@ -165,30 +140,45 @@ async function signInWithGoogle() {
 // === Guest Login ===
 async function signInGuest() {
   try {
-    const gmail = "guest@gmail.com";
-    const password = "guest123";
-
-    const result = await firebaseSignInWithEmailAndPassword(
-      auth,
-      gmail,
-      password
-    );
+    const result = await signInAnonymously(auth);
     const user = result.user;
+    const guestEmail = "guest@summarist.app";
 
-    await saveUserToFirestore(user, {
+    await ensureUserDoc(user, {
       isPremium: true,
       isGuest: true,
       premiumSource: "guest",
     });
 
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        email: guestEmail,
+        isPremium: true,
+        isGuest: true,
+        premiumSource: "guest",
+      },
+      { merge: true }
+    );
+
+    store.dispatch(
+      setUser({
+        uid: user.uid,
+        email: guestEmail,
+        isPremium: true,
+        isGuest: true,
+        premiumSource: "guest",
+      })
+    );
+
     return user;
   } catch (err: any) {
-    console.error("Guest login error:", err.code, err.message);
+    console.error("Guest login error:", err);
     throw err;
   }
 }
 
-// === Book Library Helpers ===
+// === Library Helpers ===
 async function addBookToLibrary(bookId: string, uid: string) {
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, { savedBooks: arrayUnion(bookId) });
@@ -207,7 +197,7 @@ async function markBookAsFinished(userId: string, bookId: string) {
   });
 }
 
-// === Misc ===
+// === Logout & Reset ===
 async function logout() {
   await firebaseSignOut(auth);
   store.dispatch(clearUser());
@@ -217,11 +207,13 @@ async function resetPassword(email: string) {
   return await firebaseSendPasswordResetEmail(auth, email);
 }
 
+// === Exports ===
 export {
   app,
   auth,
   db,
   googleProvider,
+  ensureUserDoc,
   saveUserToFirestore,
   signInGuest,
   signInWithEmail,
