@@ -57,7 +57,7 @@ export default function SettingsPage() {
               className="mb-6"
             />
             <p className="text-xl font-semibold mb-4">
-              Log in to your account to see your details.
+              Login to your account to see your details.
             </p>
             <button
               onClick={() => setIsLoginOpen(true)}

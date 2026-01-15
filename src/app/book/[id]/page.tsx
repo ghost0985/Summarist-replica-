@@ -13,21 +13,16 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import BookPageSkeleton from "@/components/books/BookPageSkeleton";
-import {
-  addBookToLibrary,
-  removeBookFromLibrary,
-  auth,
-  db,
-} from "@/lib/firebase";
+import { addBookToLibrary, removeBookFromLibrary, db } from "@/lib/firebase";
 import { useAppSelector } from "@/redux/hooks";
 import { doc, getDoc } from "firebase/firestore";
 import BookActionButtons from "@/components/books/BookActionButtons";
+import { useGuestLibrary } from "@/hooks/useGuestLibrary";
 
 export default function BookPage() {
   const { id } = useParams();
-  const { uid } = useAppSelector((state) => state.user);
+  const { uid, isGuest } = useAppSelector((state) => state.user);
   const [book, setBook] = useState<Book | null>(null);
-  const { isPremium } = useAppSelector((state) => state.user);
   const [duration, setDuration] = useState<string>("--:--");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<"save" | "remove" | null>(
@@ -35,6 +30,8 @@ export default function BookPage() {
   );
   const [isSaved, setIsSaved] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+
+  const { savedBooks, toggleSavedBook } = useGuestLibrary();
 
   // === Format time helper ===
   const formatTime = (seconds: number) => {
@@ -47,7 +44,7 @@ export default function BookPage() {
 
   // === Fetch book and user library state ===
   useEffect(() => {
-    let isMounted = true; // prevents state updates after unmount
+    let isMounted = true;
 
     async function fetchBook() {
       try {
@@ -56,10 +53,10 @@ export default function BookPage() {
         );
         if (!res.ok) throw new Error("Book not found");
         const data = await res.json();
-
         if (!isMounted) return;
         setBook(data);
 
+        // Load audio duration
         const audio = document.createElement("audio");
         audio.src = data.audioLink;
         audio.addEventListener("loadedmetadata", () => {
@@ -68,7 +65,8 @@ export default function BookPage() {
           }
         });
 
-        if (uid && uid !== "guest") {
+        // === Handle normal users (Firestore) ===
+        if (uid && !isGuest) {
           const userRef = doc(db, "users", uid);
           const userSnap = await getDoc(userRef);
 
@@ -80,13 +78,17 @@ export default function BookPage() {
           }
         }
 
+        // === Handle guest users (localStorage) ===
+        if (isGuest) {
+          setIsSaved(savedBooks.includes(id as string));
+        }
+
         if (isMounted) setLoading(false);
       } catch (err: any) {
         if (err.code === "permission-denied") {
           console.warn("User logged out before data could be fetched.");
           return;
         }
-
         console.error("Error fetching book:", err);
         if (isMounted) setLoading(false);
       }
@@ -97,31 +99,39 @@ export default function BookPage() {
     return () => {
       isMounted = false;
     };
-  }, [id, uid]);
+  }, [id, uid, isGuest, savedBooks]);
 
-  // === Handle save to library ===
-  const handleSave = async () => {
-    if (!uid || !book) return;
-    setActionLoading("save");
-    try {
-      await addBookToLibrary(book.id, uid);
-      setIsSaved(true);
-    } catch (err) {
-      console.error("Error saving:", err);
-    } finally {
-      setActionLoading(null);
+  // ✅ Keep guest saved state in sync with localStorage
+  useEffect(() => {
+    if (isGuest && id) {
+      setIsSaved(savedBooks.includes(id as string));
     }
-  };
+  }, [isGuest, savedBooks, id]);
 
-  // === Handle remove from library ===
-  const handleRemove = async () => {
-    if (!uid || !book) return;
-    setActionLoading("remove");
+  // === Handle save/remove ===
+  const handleToggleSave = async () => {
+    if (!book) return;
+
+    // === Guest users: localStorage only ===
+    if (isGuest) {
+      toggleSavedBook(book.id);
+      setIsSaved((prev) => !prev);
+      return;
+    }
+
+    // === Normal users: Firestore ===
     try {
-      await removeBookFromLibrary(uid, book.id);
-      setIsSaved(false);
+      setActionLoading(isSaved ? "remove" : "save");
+
+      if (isSaved) {
+        await removeBookFromLibrary(uid!, book.id);
+        setIsSaved(false);
+      } else {
+        await addBookToLibrary(book.id, uid!);
+        setIsSaved(true);
+      }
     } catch (err) {
-      console.error("Error removing:", err);
+      console.error("Error updating library:", err);
     } finally {
       setActionLoading(null);
     }
@@ -200,33 +210,31 @@ export default function BookPage() {
 
         {/* --- Save / Remove from Library --- */}
         <div className="mt-4">
-          {!isSaved ? (
-            <button
-              onClick={handleSave}
-              disabled={actionLoading === "save"}
-              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-300"
-            >
-              <Bookmark size={18} />
-              <span>
-                {actionLoading === "save"
-                  ? "Saving..."
-                  : "Add title to My Library"}
-              </span>
-            </button>
-          ) : (
-            <button
-              onClick={handleRemove}
-              disabled={actionLoading === "remove"}
-              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-300"
-            >
-              <BookmarkCheck size={18} />
-              <span>
-                {actionLoading === "remove"
-                  ? "Removing..."
-                  : "Saved in My Library"}
-              </span>
-            </button>
-          )}
+          <button
+            onClick={handleToggleSave}
+            disabled={actionLoading !== null}
+            className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-300"
+          >
+            {isSaved ? (
+              <>
+                <BookmarkCheck size={18} />
+                <span>
+                  {actionLoading === "remove"
+                    ? "Removing..."
+                    : "Saved in My Library"}
+                </span>
+              </>
+            ) : (
+              <>
+                <Bookmark size={18} />
+                <span>
+                  {actionLoading === "save"
+                    ? "Saving..."
+                    : "Add title to My Library"}
+                </span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* --- About Section --- */}

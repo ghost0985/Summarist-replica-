@@ -44,11 +44,14 @@ const googleProvider = new GoogleAuthProvider();
 const DEFAULT_BOOKS = ["book-1", "book-2"];
 
 // === Ensure user doc exists in Firestore ===
-async function ensureUserDoc(user: User, overrides?: Partial<{
-  isPremium: boolean;
-  isGuest: boolean;
-  premiumSource: PremiumSource;
-}>) {
+async function ensureUserDoc(
+  user: User,
+  overrides?: Partial<{
+    isPremium: boolean;
+    isGuest: boolean;
+    premiumSource: PremiumSource;
+  }>
+) {
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
 
@@ -91,8 +94,7 @@ async function saveUserToFirestore(
       updatedFields.isGuest = user.isAnonymous ?? false;
     if (existing.savedBooks === undefined)
       updatedFields.savedBooks = DEFAULT_BOOKS;
-    if (existing.finishedBooks === undefined)
-      updatedFields.finishedBooks = [];
+    if (existing.finishedBooks === undefined) updatedFields.finishedBooks = [];
 
     updatedFields.isPremium =
       existing.isPremium ?? overrides?.isPremium ?? false;
@@ -116,13 +118,21 @@ async function saveUserToFirestore(
 
 // === Auth Methods ===
 async function signInWithEmail(email: string, password: string) {
-  const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
+  const result = await firebaseSignInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
   await saveUserToFirestore(result.user);
   return result.user;
 }
 
 async function signUpWithEmail(email: string, password: string) {
-  const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password);
+  const result = await firebaseCreateUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
   await saveUserToFirestore(result.user, {
     isPremium: false,
     isGuest: false,
@@ -140,27 +150,48 @@ async function signInWithGoogle() {
 // === Guest Login ===
 async function signInGuest() {
   try {
-    const result = await signInAnonymously(auth);
-    const user = result.user;
-    const guestEmail = "guest@summarist.app";
-
-    await ensureUserDoc(user, {
-      isPremium: true,
-      isGuest: true,
-      premiumSource: "guest",
-    });
-
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        email: guestEmail,
-        isPremium: true,
-        isGuest: true,
-        premiumSource: "guest",
-      },
-      { merge: true }
+    // --- Try to load existing guest data from localStorage ---
+    const existingGuestData = JSON.parse(
+      localStorage.getItem("guestUserData") || "null"
     );
 
+    const DEFAULT_BOOKS = ["book-1", "book-2"];
+    const guestEmail = "guest@summarist.app";
+
+    // --- Sign in anonymously ---
+    const result = await signInAnonymously(auth);
+    const user = result.user;
+
+    // --- Determine what data to save ---
+    const guestProfile = existingGuestData
+      ? {
+          ...existingGuestData,
+          uid: user.uid,
+          email: guestEmail,
+          isPremium: true,
+          isGuest: true,
+          premiumSource: "guest",
+          updatedAt: new Date(),
+        }
+      : {
+          uid: user.uid,
+          email: guestEmail,
+          isPremium: true,
+          isGuest: true,
+          premiumSource: "guest",
+          savedBooks: DEFAULT_BOOKS,
+          finishedBooks: [],
+          updatedAt: new Date(),
+        };
+
+    // --- Store locally ---
+    localStorage.setItem("guestUserData", JSON.stringify(guestProfile));
+
+    // --- Save or update Firestore (optional) ---
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, guestProfile, { merge: true });
+
+    // --- Update Redux store immediately ---
     store.dispatch(
       setUser({
         uid: user.uid,
