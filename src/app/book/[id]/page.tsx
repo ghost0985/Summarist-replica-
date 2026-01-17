@@ -101,7 +101,7 @@ export default function BookPage() {
     };
   }, [id, uid, isGuest, savedBooks]);
 
-  // ✅ Keep guest saved state in sync with localStorage
+  // Keep guest saved state in sync with localStorage
   useEffect(() => {
     if (isGuest && id) {
       setIsSaved(savedBooks.includes(id as string));

@@ -39,7 +39,7 @@ export function useUserBooks() {
             setBooks({ saved: [], finished: [] });
             return;
           }
-          console.error("🔥 Firestore snapshot error:", error);
+          console.error("Firestore snapshot error:", error);
         }
       );
     };

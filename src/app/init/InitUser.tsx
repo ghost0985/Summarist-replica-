@@ -22,7 +22,7 @@ export default function InitUser() {
 
       // === User logged out ===
       if (!firebaseUser) {
-        console.log("👋 Logged out, switching to guest mode");
+        console.log("Logged out, switching to guest mode");
         dispatch(clearUser());
 
         const guestUserData = {
@@ -49,7 +49,7 @@ export default function InitUser() {
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
-          console.warn("⚠️ No Firestore doc for user yet. Creating fallback guest.");
+          console.warn("No Firestore doc for user yet. Creating fallback guest.");
           const guestData = {
             uid: firebaseUser.uid,
             email: firebaseUser.email ?? "guest@summarist.app",
@@ -80,7 +80,7 @@ export default function InitUser() {
           }
         });
       } catch (err) {
-        console.error("🔥 Error initializing user:", err);
+        console.error("Error initializing user:", err);
       }
     });
 

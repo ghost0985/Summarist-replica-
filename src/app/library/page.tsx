@@ -12,7 +12,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import Image from "next/image";
 import { useGuestLibrary } from "@/hooks/useGuestLibrary";
 
-// === Guest finished books (always the same) ===
+// === Guest finished books ===
 const GUEST_FINISHED_BOOK_IDS = [
   "18tro3gle2p",
   "2l0idxm1rvw",
@@ -35,7 +35,7 @@ export default function LibraryPage() {
   const [finishedBooks, setFinishedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const { savedBooks: guestSaved } = useGuestLibrary(); // ✅ only use guest saved books
+  const { savedBooks: guestSaved } = useGuestLibrary(); 
 
   // === Fetch Book Data from Cloud Function ===
   async function fetchBooksFromAPI(ids: string[]): Promise<Book[]> {
@@ -71,7 +71,7 @@ export default function LibraryPage() {
       setLoading(true);
 
       try {
-        // ✅ Guest User → LocalStorage + Static Finished Books
+        //  Guest User → LocalStorage + Static Finished Books
         if (isGuest) {
           const saved = await fetchBooksFromAPI(guestSaved);
           const finished = await fetchBooksFromAPI(GUEST_FINISHED_BOOK_IDS);
@@ -81,7 +81,7 @@ export default function LibraryPage() {
           return;
         }
 
-        // ✅ Logged-in User → Firestore Sync
+        // Logged-in User → Firestore Sync
         if (uid) {
           const userRef = doc(db, "users", uid);
           const unsubscribe = onSnapshot(
@@ -116,7 +116,6 @@ export default function LibraryPage() {
           return () => unsubscribe();
         }
 
-        // 🚫 No User (Empty State)
         setSavedBooks([]);
         setFinishedBooks([]);
         setLoading(false);

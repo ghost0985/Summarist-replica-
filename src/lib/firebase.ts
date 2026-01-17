@@ -238,7 +238,7 @@ async function resetPassword(email: string) {
   return await firebaseSendPasswordResetEmail(auth, email);
 }
 
-// === Exports ===
+
 export {
   app,
   auth,
