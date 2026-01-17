@@ -3,21 +3,27 @@ import * as admin from "firebase-admin";
 import { Resend } from "resend";
 import Stripe from "stripe";
 
-export const config = {
-  api: {
-    bodyParser: false, 
-  },
-};
+// ✅ Required for App Router (instead of export const config)
+export const dynamic = "force-dynamic";
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// === Initialize Stripe ===
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover",
+});
 
-
-// Initialize Resend
+// === Initialize Resend ===
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-// Initialize Firebase Admin
+// === Initialize Firebase Admin ===
 if (!admin.apps.length) {
+  if (
+    !process.env.FIREBASE_PROJECT_ID ||
+    !process.env.FIREBASE_CLIENT_EMAIL ||
+    !process.env.FIREBASE_PRIVATE_KEY
+  ) {
+    throw new Error("Firebase service account is not properly configured");
+  }
+
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
@@ -30,14 +36,13 @@ const db = admin.firestore();
 
 export async function POST(req: Request) {
   try {
-    const rawBody = await req.arrayBuffer();
-    const body = Buffer.from(rawBody);
+    const rawBody = await req.text(); 
     const sig = req.headers.get("stripe-signature");
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, sig!, webhookSecret);
+      event = stripe.webhooks.constructEvent(rawBody, sig!, webhookSecret);
     } catch (err: any) {
       console.error("Stripe signature verification failed:", err.message);
       return NextResponse.json(
@@ -46,8 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
-
-    // ACTIVATE PREMIUM (checkout, renewal, or new subscription)
+    // === ACTIVATE PREMIUM (Checkout or Subscription Created) ===
     if (
       event.type === "checkout.session.completed" ||
       event.type === "invoice.payment_succeeded" ||
@@ -64,7 +68,6 @@ export async function POST(req: Request) {
       let stripeCustomerId: string | undefined;
       let displayName = "there";
 
-      // Handle checkout session
       if (event.type === "checkout.session.completed") {
         const session = object as Stripe.Checkout.Session;
         const metadata = session.metadata || {};
@@ -75,36 +78,29 @@ export async function POST(req: Request) {
         stripeCustomerId = session.customer as string;
       }
 
-      // Handle invoice success (recurring payment)
       if (event.type === "invoice.payment_succeeded") {
         const invoice = object as Stripe.Invoice;
         stripeCustomerId = invoice.customer as string;
       }
 
-      // Handle new subscription
       if (event.type === "customer.subscription.created") {
         const sub = object as Stripe.Subscription;
         stripeCustomerId = sub.customer as string;
       }
 
-      // If no UID found, look up by Stripe customer ID
       if (!uid && stripeCustomerId) {
         const userSnap = await db
           .collection("users")
           .where("stripeCustomerId", "==", stripeCustomerId)
           .limit(1)
           .get();
-
-        if (!userSnap.empty) {
-          uid = userSnap.docs[0].id;
-        }
+        if (!userSnap.empty) uid = userSnap.docs[0].id;
       }
 
       if (!uid) {
         return NextResponse.json({ message: "Missing UID" }, { status: 200 });
       }
 
-      // Update Firestore user record
       await db.collection("users").doc(uid).update({
         isPremium: true,
         premiumSource: "stripe",
@@ -114,7 +110,6 @@ export async function POST(req: Request) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Send confirmation email (only for checkout session)
       if (email && event.type === "checkout.session.completed") {
         try {
           await resend.emails.send({
@@ -143,12 +138,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // HANDLE SUBSCRIPTION CANCELLATION
+    // === HANDLE SUBSCRIPTION CANCELLATION ===
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      // Lookup Firestore user by Stripe customer ID
       const userSnap = await db
         .collection("users")
         .where("stripeCustomerId", "==", customerId)
@@ -168,7 +162,6 @@ export async function POST(req: Request) {
         canceledAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Send cancellation email
       if (userData.email) {
         try {
           await resend.emails.send({
@@ -197,7 +190,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // respond to Stripe
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err) {
     console.error("Webhook Error:", err);
