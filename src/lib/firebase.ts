@@ -1,4 +1,4 @@
-export const runtime = "node.js"
+export const runtime = "node.js";
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import {
@@ -41,7 +41,6 @@ if (!firebaseConfig.apiKey) {
 } else {
   console.log("✅ Firebase config successfully loaded:", firebaseConfig);
 }
-
 
 // === Initialize Firebase ===
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -151,9 +150,19 @@ async function signUpWithEmail(email: string, password: string) {
 }
 
 async function signInWithGoogle() {
-  const result = await firebaseSignInWithPopup(auth, googleProvider);
-  await saveUserToFirestore(result.user);
-  return result.user;
+  try {
+    if (typeof window === "undefined") {
+      throw new Error("Google Sign-In must be run client-side.");
+    }
+
+    const result = await firebaseSignInWithPopup(auth, googleProvider);
+    await saveUserToFirestore(result.user);
+    console.log("Google Sign-In successful:", result.user.email);
+    return result.user;
+  } catch (err: any) {
+    console.error("Google Sign-In failed:", err.message || err);
+    throw err;
+  }
 }
 
 // === Guest Login ===
@@ -246,7 +255,6 @@ async function logout() {
 async function resetPassword(email: string) {
   return await firebaseSendPasswordResetEmail(auth, email);
 }
-
 
 export {
   app,
