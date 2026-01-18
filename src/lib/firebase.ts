@@ -1,3 +1,5 @@
+export const runtime = "node.js"
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
@@ -33,6 +35,13 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
+
+if (!firebaseConfig.apiKey) {
+  console.error("❌ Missing Firebase env vars in build:", firebaseConfig);
+} else {
+  console.log("✅ Firebase config successfully loaded:", firebaseConfig);
+}
+
 
 // === Initialize Firebase ===
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
