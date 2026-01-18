@@ -65,7 +65,7 @@ async function ensureUserDoc(
       finishedBooks: [],
       createdAt: new Date(),
     });
-    console.log("✅ Created new Firestore doc for user:", user.uid);
+    console.log("Created new Firestore doc for user:", user.uid);
   }
 }
 
