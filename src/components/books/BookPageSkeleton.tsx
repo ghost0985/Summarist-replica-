@@ -1,68 +1,48 @@
 "use client";
 
-const BookPageSkeleton = () => {
+export default function BookPageSkeleton() {
   return (
-    <>
-      <div className="flex flex-col items-center justify-start py-10 px-6 animate-pulse">
-        {/* Book cover */}
-        <div className="w-[180px] h-[260px] bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
+    <div className="dark:bg-gray-900 min-h-screen transition-colors duration-500 overflow-auto pt-8">
+      <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col-reverse [@media(min-width:990px)]:flex-row [@media(min-width:990px)]:items-start [@media(min-width:990px)]:justify-between gap-8 animate-pulse">
+        {/* --- Left side: Text skeletons --- */}
+        <div className="flex-1 space-y-4">
+          {/* Title */}
+          <div className="h-7 w-3/4 bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+          {/* Author */}
+          <div className="h-5 w-1/2 bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+          {/* Subtitle */}
+          <div className="h-5 w-2/3 bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+          {/* Stats */}
+          <div className="flex flex-wrap gap-4 mt-6">
+            <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-32 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4 mt-8">
+            <div className="h-10 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-10 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          </div>
+
+          {/* About text */}
+          <div className="mt-10 space-y-3">
+            <div className="h-4 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-11/12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-10/12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            <div className="h-4 w-9/12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div>
+
+        {/* --- Right side: Image skeleton --- */}
+        <div className="flex justify-center [@media(min-width:990px)]:justify-end w-full [@media(min-width:990px)]:w-[320px] mb-6 [@media(min-width:990px)]:mb-0">
+          <div className="h-[400px] w-[320px] bg-gray-300 dark:bg-gray-700 rounded-md shadow-md"></div>
+        </div>
       </div>
-
-      {/* Title */}
-      <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-
-      {/* Author */}
-      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/4 mb-2"></div>
-
-      {/* Subtitle */}
-      <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-6"></div>
-
-      {/* Divider */}
-      <div className="w-full max-w-[650px] h-[1px] bg-gray-300 dark:bg-gray-700 mb-4"></div>
-
-      {/* Stats (rating, time, etc.) */}
-      <div className="flex gap-3 mb-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-4 w-20 bg-gray-200 dark:bg-gray-600 rounded"
-          ></div>
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="w-full max-w-[650px] h-[1px] bg-gray-300 dark:bg-gray-700 mb-6"></div>
-
-      {/* Buttons */}
-      <div className="flex gap-4 mb-4">
-        <div className="h-10 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
-        <div className="h-10 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
-      </div>
-
-      {/* Add to Library */}
-      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-40 mb-4"></div>
-
-      {/* Divider */}
-      <div className="w-full max-w-[650px] h-[1px] bg-gray-300 dark:bg-gray-700 mb-6"></div>
-
-      {/* Section title */}
-      <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-40 mb-4"></div>
-
-      {/* Tag chips */}
-      <div className="flex gap-3 mb-6">
-        <div className="h-6 w-28 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
-        <div className="h-6 w-36 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
-      </div>
-
-      {/* Paragraph placeholder */}
-      <div className="space-y-3 max-w-[700px] w-full">
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-full"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-11/12"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-10/12"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-9/12"></div>
-      </div>
-    </>
+    </div>
   );
-};
-
-export default BookPageSkeleton;
+}
