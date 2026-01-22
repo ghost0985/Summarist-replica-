@@ -12,7 +12,6 @@ interface Props {
 export default function StatsHighlight({ texts, align = "start" }: Props) {
   const activeIndex = useSelector((state: RootState) => state.stats.activeIndex);
 
-  // ✅ Track screen width to handle responsive alignment
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -22,7 +21,6 @@ export default function StatsHighlight({ texts, align = "start" }: Props) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ Tailwind-safe alignment (auto-adjust for mobile)
   const alignmentClasses = isMobile
     ? "items-start text-left"
     : align === "end"
