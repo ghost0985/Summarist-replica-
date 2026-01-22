@@ -116,12 +116,13 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section - Part 1 */}
-      <section className="highlight-section bg-gray-50 dark:bg-gray-900 py-8 md:py-16"
-      data-index={0}
+      <section
+        className="highlight-section bg-gray-50 dark:bg-gray-900 py-8 md:py-16"
+        data-index={0}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 items-start gap-8 md:gap-12 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-stretch justify-between gap-8 md:gap-12 px-4 md:px-6">
           {/* Highlight List */}
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center h-full">
             <StatsController length={6} />
             <StatsHighlight
               texts={[
@@ -137,14 +138,14 @@ export default function HomePage() {
           </div>
 
           {/* Stats Box */}
-          <div className="bg-gray-200 dark:bg-gray-800 p-5 md:p-10 rounded-lg space-y-4 md:space-y-6">
+          <div className="flex flex-col justify-center h-full bg-gray-200 dark:bg-gray-800 p-5 md:p-10 rounded-lg space-y-4 md:space-y-6">
             {[
               {
                 percent: "93%",
                 desc: (
                   <>
                     of Summarist members{" "}
-                    <span className="font-semibold">
+                    <span className="font-semibold dark:text-green-500">
                       significantly increase
                     </span>{" "}
                     reading frequency.
@@ -156,7 +157,7 @@ export default function HomePage() {
                 desc: (
                   <>
                     of Summarist members{" "}
-                    <span className="font-semibold">establish better</span>{" "}
+                    <span className="font-semibold dark:text-green-500">establish better</span>{" "}
                     habits.
                   </>
                 ),
@@ -166,7 +167,7 @@ export default function HomePage() {
                 desc: (
                   <>
                     have made{" "}
-                    <span className="font-semibold">significant positive</span>{" "}
+                    <span className="font-semibold dark:text-green-500">significant positive</span>{" "}
                     change to their lives.
                   </>
                 ),
@@ -190,16 +191,16 @@ export default function HomePage() {
         className="highlight-section bg-gray-50 dark:bg-gray-900 py-4 md:py-16"
         data-index={1}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 items-start gap-8 md:gap-12 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-stretch justify-between gap-8 md:gap-12 px-4 md:px-6">
           {/* Stats Box */}
-          <div className="order-2 md:order-1 bg-gray-200 dark:bg-gray-800 p-5 md:p-10 rounded-lg space-y-4 md:space-y-6">
+          <div className="order-2 md:order-1 flex flex-col justify-center h-full bg-gray-200 dark:bg-gray-800 p-5 md:p-10 rounded-lg space-y-4 md:space-y-6">
             {[
               {
                 percent: "91%",
                 desc: (
                   <>
                     of Summarist members{" "}
-                    <span className="font-semibold">
+                    <span className="font-semibold dark:text-green-500">
                       report feeling more productive
                     </span>{" "}
                     after incorporating the service into their daily routine.
@@ -211,7 +212,7 @@ export default function HomePage() {
                 desc: (
                   <>
                     of Summarist members have{" "}
-                    <span className="font-semibold">
+                    <span className="font-semibold dark:text-green-500">
                       noticed an improvement
                     </span>{" "}
                     in comprehension and retention of information.
@@ -223,7 +224,7 @@ export default function HomePage() {
                 desc: (
                   <>
                     of Summarist members{" "}
-                    <span className="font-semibold">feel more informed</span>{" "}
+                    <span className="font-semibold dark:text-green-500">feel more informed</span>{" "}
                     about current events and industry trends since using the
                     platform.
                   </>
@@ -242,7 +243,7 @@ export default function HomePage() {
           </div>
 
           {/* Highlight List */}
-          <div className="order-1 md:order-2 flex flex-col justify-center">
+          <div className="order-1 md:order-2 flex flex-col justify-center h-full">
             <StatsHighlight
               texts={[
                 "Expand your learning",
@@ -252,7 +253,7 @@ export default function HomePage() {
                 "Improve your mood",
                 "Maximize your abilities",
               ]}
-              align="start"
+              align="end"
             />
           </div>
         </div>
@@ -329,7 +330,7 @@ export default function HomePage() {
               <div className="text-5xl text-yellow-500 flex justify-center mb-4">
                 <BiCrown />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 pb-3">
                 3 Million
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
@@ -344,7 +345,7 @@ export default function HomePage() {
                 <BsStarFill />
                 <BsStarHalf />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 pb-3">
                 4.5 Stars
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
@@ -355,7 +356,7 @@ export default function HomePage() {
               <div className="text-5xl text-green-600 flex justify-center mb-4">
                 <RiLeafLine />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 pb-3">
                 97%
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
@@ -415,7 +416,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-8 text-center text-gray-500 dark:text-gray-400">
-          Copyright &copy; 2025 Logan Heath.
+          Copyright &copy; 2026 Logan Heath.
         </div>
       </footer>
     </main>

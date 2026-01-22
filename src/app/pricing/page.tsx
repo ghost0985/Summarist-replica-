@@ -322,7 +322,7 @@ export default function PricingPage() {
 
         <div className="mt-14 text-center">
           <p className="text-sm text-[#032b41]/80 dark:text-gray-400">
-            © 2025 Logan Heath. All rights reserved.
+            © 2026 Logan Heath. All rights reserved.
           </p>
         </div>
       </footer>
