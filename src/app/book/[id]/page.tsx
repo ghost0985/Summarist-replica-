@@ -181,6 +181,14 @@ export default function BookPage() {
           {/* --- Divider --- */}
           <hr className="mt-4 mb-5 border-gray-200 dark:border-gray-700" />
 
+          {/* --- Action Buttons --- */}
+          <div className="gap-3">
+            <BookActionButtons
+              bookId={book.id}
+              isPremiumOnly={book.subscriptionRequired}
+            />
+          </div>
+
           {/* About Section */}
           <div className="mt-10 text-left">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
