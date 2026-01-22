@@ -9,8 +9,8 @@ import {
   Star,
   Mic,
   Bookmark,
-  Lightbulb,
   BookmarkCheck,
+  Lightbulb,
 } from "lucide-react";
 import BookPageSkeleton from "@/components/books/BookPageSkeleton";
 import { addBookToLibrary, removeBookFromLibrary, db } from "@/lib/firebase";
@@ -36,7 +36,9 @@ export default function BookPage() {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Fetch book + user library
@@ -150,7 +152,7 @@ export default function BookPage() {
           {/* --- Divider --- */}
           <hr className="mt-5 mb-5 border-gray-200 dark:border-gray-700" />
 
-          {/* --- Stats Section (2x2 balanced layout) --- */}
+          {/* --- Stats Section --- */}
           <div className="grid grid-cols-2 gap-y-3 max-w-[420px] text-[15px] sm:text-[16px] text-gray-900 dark:text-gray-300">
             <span className="flex items-center gap-2">
               <Star size={20} />
@@ -182,14 +184,39 @@ export default function BookPage() {
           <hr className="mt-4 mb-5 border-gray-200 dark:border-gray-700" />
 
           {/* --- Action Buttons --- */}
-          <div className="gap-3">
+          <div className="flex flex-wrap gap-3 mb-5">
             <BookActionButtons
               bookId={book.id}
               isPremiumOnly={book.subscriptionRequired}
             />
           </div>
 
-          {/* About Section */}
+          {/* Save / Remove Button below the action buttons */}
+          <div>
+            <button
+              onClick={handleToggleSave}
+              disabled={actionLoading !== null}
+              className={`flex items-center gap-2 text-[15px] font-medium transition-all duration-300 ${
+                isSaved
+                  ? "text-green-500 hover:text-green-400"
+                  : "text-blue-500 hover:text-blue-400"
+              } ${actionLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+            >
+              {isSaved ? (
+                <>
+                  <BookmarkCheck size={18} />
+                  Added to My Library
+                </>
+              ) : (
+                <>
+                  <Bookmark size={18} />
+                  Add title to My Library
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* --- About Section --- */}
           <div className="mt-10 text-left">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               What's it about?
@@ -209,7 +236,7 @@ export default function BookPage() {
             </p>
           </div>
 
-          {/* Author Section */}
+          {/* --- Author Section --- */}
           <div className="mt-5 text-left pb-16">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               About the author
